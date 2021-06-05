@@ -11,6 +11,26 @@ void ft_exit_error(char *s)
 	exit(1);
 }
 
+uint64_t					get_time(void)
+{
+	uint64_t				to_return;
+	static struct timeval	time;
+
+	if (gettimeofday(&time, NULL))
+		ft_exit_error(MSG_ERR_TIME);
+	to_return = time.tv_sec * 1000 + time.tv_usec / 1000;
+	return (to_return);
+}
+
+void						fix_usleep(uint64_t msec)
+{
+	uint64_t				start;
+
+	start = get_time();
+	while (get_time() - start < msec)
+		usleep(500);
+}
+
 int ft_check_nbr_to_str(char *s)
 {
 	int i;
@@ -41,110 +61,109 @@ int ft_atoitest(char *s)
 	return ((int)nbr);
 }
 
-void *ft_live(t_options *options)
+
+t_all **ft_memory_allocation(unsigned len)
 {
-	int nbr = g_nbr;
-	int fork_right;
-	int fork_left;
-	g_nbr++;
-	while (1)
+	t_all **all;
+	pthread_mutex_t **forks;
+	int i;
+
+	forks = malloc(sizeof(pthread_mutex_t *) * (len + 1));
+	if (!forks)
+		ft_exit_error(MSG_ERR_MALLOC);
+	i = 0;
+	while (i < (int)len)
 	{
-		pthread_mutex_lock(&options->forks_left[g_fork_left]);
-		fork_left = g_fork_left;
-		if (g_fork_left > 2)
-			g_fork_left = 0;
-		else
-			g_fork_left++;
-		pthread_mutex_lock(&options->forks_right[g_fork_right]);
-		fork_right = g_fork_right;
-		if (g_fork_right > 2)
-			g_fork_right = 0;
-		else
-			g_fork_right++;
-		printf("eat %d, fork = %d %d\n", nbr, fork_left, fork_right);
-		usleep(options->time_to_eat);
-		printf("sleep %d, fork = %d %d\n", nbr, fork_left, fork_right);
-		usleep(options->time_to_sleep);
-		pthread_mutex_unlock(&options->forks_left[fork_left]);
-		pthread_mutex_unlock(&options->forks_right[fork_right]);
+		forks[i] = malloc(sizeof(pthread_mutex_t) * (len + 1));
+		i++;
+	}
+	forks[i] = 0;
+	all = malloc((len + 1) * sizeof(t_all *));
+	if (!all)
+		ft_exit_error(MSG_ERR_MALLOC);
+	i = 0;
+	while (i < (int)len)
+	{
+		all[i] = malloc(sizeof (t_all));
+		if (!all)
+			ft_exit_error(MSG_ERR_MALLOC);
+		all[i]->forks = forks;
+		i++;
+	}
+	all[i] = NULL;
+	return (all);
+}
+
+void *ft_live(t_all *all)
+{
+	pthread_mutex_lock(all->forks[all->left_fork]);
+	return (0);
+}
+
+void *ft_start_simulation(t_all **all)
+{
+	int i;
+
+	i = 0;
+	while (all[i])
+	{
+		pthread_create(&all[i]->tread_philosofer,0,(void *)ft_live,all[i]); //Ошибочка ?
+		i++;
 	}
 	return (0);
 }
 
-void *ft_death(pthread_mutex_t *death)
+void ft_init(t_all **all)
 {
-	pthread_mutex_lock(death);
-	return (0);
-}
-void ft_init_philo(t_options *options)
-{
-	pthread_t *philo;
-	pthread_mutex_t death;
-	pthread_mutex_t *fork_left;
-	pthread_mutex_t *fork_right;
 	int i;
-	g_fork_right = 0;
-	g_fork_left = 0;
-	g_nbr = 0;
+	pthread_t waiter;
 
-	fork_left = ft_calloc(3,sizeof(pthread_mutex_t));
-	if (!fork_left)
-		ft_exit_error("fail malloc");
-	fork_right = ft_calloc(3,sizeof(pthread_mutex_t));
-	if (!fork_right)
-		ft_exit_error("fail malloc");
-
-
-	pthread_mutex_init(&death,0);
-	pthread_mutex_lock(&death);
 	i = 0;
-	while (i < options->philo_nbr)
-		pthread_mutex_init(&fork_left[i++],0);
-	i = 0;
-	while (i < options->philo_nbr)
-		pthread_mutex_init(&fork_right[i++],0);
-	options->forks_right = fork_right;
-	options->forks_left = fork_left;
-	i = 0;
-	philo = ft_calloc(options->philo_nbr + 1,sizeof (pthread_t));
-	if (!philo)
-		ft_exit_error("fail malloc");
-	while (i < options->philo_nbr)
+	while (all[i])
 	{
-		if (pthread_create(&philo[i++], 0, (void *) ft_live, options))
-			ft_exit_error("pthread_create fail");
-		usleep(20);
-	}
-	sleep(10);
+		all[i]->left_fork = i;
+		pthread_mutex_init(all[i]->forks[i], 0);
+		if (i == (int)all[i]->philo_nbr - 1)
+			all[i]->right_fork = 0;
+		else
+			all[i]->right_fork = + 1;//поломалась?
 
+		i++;
+	}
+	pthread_create(&waiter,0,(void *) ft_start_simulation,(all)); //поломалась?
 }
 
-t_options *ft_check_args(char *argv[])
+t_all **ft_check_args(char *argv[])
 {
 	int i;
-	t_options *options;
-
+	t_all **all;
+	int len;
 	i = 1;
 	while(argv[i])
 		if (ft_check_nbr_to_str(argv[i++]))
-			return (0);
-	options = malloc(sizeof(t_options));
-	ft_bzero(options,sizeof(t_options));
-	options->philo_nbr = ft_atoitest(argv[1]);
-	options->time_to_die = ft_atoitest(argv[2]);
-	options->time_to_eat = ft_atoitest(argv[3]);
-	options->time_to_sleep = ft_atoitest(argv[4]);
-	options->eat_nbr = ft_atoitest(argv[5]);
-	return (options);
+			return (0); // УТЕЧКА
+	len = ft_atoitest(argv[1]);
+	all = ft_memory_allocation(len);
+	i = 0;
+	while (all[i])
+	{
+		all[i]->philo_nbr = ft_atoitest(argv[1]);
+		all[i]->time_to_die = ft_atoitest(argv[2]);
+		all[i]->time_to_eat = ft_atoitest(argv[3]);
+		all[i]->time_to_sleep = ft_atoitest(argv[4]);
+		all[i]->eat_nbr = ft_atoitest(argv[5]);
+		i++;
+	}
+	return (all);
 }
 int main(int argc, char *argv[])
 {
-	t_options *options;
+	t_all **all;
 	if (argc < 5 || argc > 7)
 		ft_exit_error("check args");
-	options = ft_check_args(argv);
-	if (!options)
+	all = ft_check_args(argv);
+	if (!all)
 		ft_exit_error("check args");
-	ft_init_philo(options);
+	ft_init(all);
     return(0);
 }
