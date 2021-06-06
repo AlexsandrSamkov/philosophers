@@ -11,7 +11,7 @@ void ft_exit_error(char *s)
 	exit(1);
 }
 
-uint64_t					get_time(void)
+uint64_t					ft_get_time(void)
 {
 	uint64_t				to_return;
 	static struct timeval	time;
@@ -22,12 +22,12 @@ uint64_t					get_time(void)
 	return (to_return);
 }
 
-void						fix_usleep(uint64_t msec)
+void						ft_fix_usleep(uint64_t msec)
 {
 	uint64_t				start;
 
-	start = get_time();
-	while (get_time() - start < msec)
+	start = ft_get_time();
+	while (ft_get_time() - start < msec)
 		usleep(500);
 }
 
@@ -66,8 +66,12 @@ t_all **ft_memory_allocation(unsigned len)
 {
 	t_all **all;
 	pthread_mutex_t **forks;
+	pthread_mutex_t *fix_time;
+	pthread_mutex_t *waiter;
 	int i;
 
+	fix_time = malloc(sizeof(pthread_mutex_t));
+	waiter = malloc(sizeof(pthread_mutex_t));
 	forks = malloc(sizeof(pthread_mutex_t *) * (len + 1));
 	if (!forks)
 		ft_exit_error(MSG_ERR_MALLOC);
@@ -87,7 +91,10 @@ t_all **ft_memory_allocation(unsigned len)
 		all[i] = malloc(sizeof (t_all));
 		if (!all)
 			ft_exit_error(MSG_ERR_MALLOC);
+		all[i]->last_meal = malloc(sizeof(uint64_t));	
 		all[i]->forks = forks;
+		all[i]->waiter = waiter;
+		all[i]->fix_get_time = fix_time;
 		i++;
 	}
 	all[i] = NULL;
@@ -96,20 +103,86 @@ t_all **ft_memory_allocation(unsigned len)
 
 void *ft_live(t_all *all)
 {
-	pthread_mutex_lock(all->forks[all->left_fork]);
+	//int i;
+	while (1)
+	{
+		pthread_mutex_lock(all->waiter);
+		pthread_mutex_lock(all->forks[all->left_fork]);
+		printf(MSG_FORK,all->id_philo,ft_get_time() - all->start_time);
+		pthread_mutex_lock(all->forks[all->right_fork]);
+		printf(MSG_FORK,all->id_philo,ft_get_time() - all->start_time);
+		printf(MSG_EAT,all->id_philo,ft_get_time() - all->start_time);
+		pthread_mutex_unlock(all->waiter);
+		ft_fix_usleep(all->time_to_eat);
+		pthread_mutex_lock(all->fix_get_time);
+		*(all->last_meal) = (unsigned long long)(ft_get_time() - all->start_time);
+		pthread_mutex_unlock(all->fix_get_time);
+		pthread_mutex_unlock(all->forks[all->left_fork]);
+		pthread_mutex_unlock(all->forks[all->right_fork]);
+		printf(MSG_SLEEP,all->id_philo,ft_get_time() - all->start_time);
+		ft_fix_usleep(all->time_to_sleep);
+		printf(MSG_THINK,all->id_philo,ft_get_time() - all->start_time);
+	}
+
 	return (0);
 }
 
 void *ft_start_simulation(t_all **all)
 {
 	int i;
-
+	uint64_t start_time;
+	int len;
+	len = all[0]->philo_nbr % 2;
 	i = 0;
-	while (all[i])
+
+	start_time = ft_get_time();
+		all[0]->start_time  = start_time;
+		*(all[0]->last_meal) = start_time;
+		all[0]->id_philo = 0 + 1;
+		pthread_create(&all[0]->tread_philosofer,0,(void *)ft_live,all[0]);
+		usleep(100);
+		all[2]->start_time  = start_time;
+		*(all[2]->last_meal) = start_time;
+		all[2]->id_philo = 2 + 1;
+		pthread_create(&all[2]->tread_philosofer,0,(void *)ft_live,all[2]);
+		all[1]->start_time  = start_time;
+		*(all[1]->last_meal) = start_time;
+		all[1]->id_philo = 1 + 1;
+		pthread_create(&all[1]->tread_philosofer,0,(void *)ft_live,all[1]);
+		all[3]->start_time  = start_time;
+		*(all[3]->last_meal) = start_time;
+		all[3]->id_philo = 3 + 1;
+		pthread_create(&all[3]->tread_philosofer,0,(void *)ft_live,all[3]);
+	while ( i <  (int)all[0]->philo_nbr)
 	{
-		pthread_create(&all[i]->tread_philosofer,0,(void *)ft_live,all[i]); //Ошибочка ?
+
+		//usleep(1000);
+		//Ошибочка ?
 		i++;
 	}
+	uint64_t test;
+	i = 0;
+	while (1)
+	{
+		ft_fix_usleep(all[0]->time_to_die /4);
+		pthread_mutex_lock(all[0]->fix_get_time);
+		test =   (ft_get_time() - *(all[0]->last_meal));
+		// if (test > all[i]->time_to_die)
+		// {
+		// 	break;
+		// }
+		pthread_mutex_unlock(all[0]->fix_get_time);
+		if (i >= (int) all[i]->philo_nbr - 1)
+			i = 0;
+		else
+			i++;
+		printf("---------------------%llu\n",test);
+	}
+	t_all *a;
+	a = all[i];
+printf("%llu Кто то умер",test);
+
+
 	return (0);
 }
 
@@ -119,6 +192,8 @@ void ft_init(t_all **all)
 	pthread_t waiter;
 
 	i = 0;
+	i = 2 % 2;
+	pthread_mutex_init(all[0]->fix_get_time, 0);
 	while (all[i])
 	{
 		all[i]->left_fork = i;
@@ -126,11 +201,11 @@ void ft_init(t_all **all)
 		if (i == (int)all[i]->philo_nbr - 1)
 			all[i]->right_fork = 0;
 		else
-			all[i]->right_fork = + 1;//поломалась?
-
+			all[i]->right_fork = i + 1;
 		i++;
 	}
 	pthread_create(&waiter,0,(void *) ft_start_simulation,(all)); //поломалась?
+	pthread_join(waiter, 0);
 }
 
 t_all **ft_check_args(char *argv[])
