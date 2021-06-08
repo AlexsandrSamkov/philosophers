@@ -62,199 +62,160 @@ int ft_atoitest(char *s)
 }
 
 
-t_all **ft_memory_allocation(unsigned len)
+void	*ft_calloc_and_check(size_t count, size_t size)
 {
-	t_all **all;
+	void *p;
+
+	p = ft_calloc(count, size);
+	if (!p)
+		ft_exit_error(MSG_ERR_MALLOC);
+	return (p);
+}
+
+philosophers_t **ft_memory_phocation(int len)
+{
+	philosophers_t **res;
 	pthread_mutex_t **forks;
-	pthread_mutex_t *fix_time;
 	pthread_mutex_t *waiter;
 	int i;
 
-	fix_time = malloc(sizeof(pthread_mutex_t));
-	waiter = malloc(sizeof(pthread_mutex_t));
-	forks = malloc(sizeof(pthread_mutex_t *) * (len + 1));
-	if (!forks)
-		ft_exit_error(MSG_ERR_MALLOC);
+	res = ft_calloc_and_check(len + 1,sizeof(philosophers_t *));
+	forks = ft_calloc_and_check(len + 1,sizeof(pthread_mutex_t *));
+	waiter = ft_calloc_and_check(1,sizeof(pthread_mutex_t *));
 	i = 0;
-	while (i < (int)len)
+	while (i < len)
+		forks[i++] = ft_calloc_and_check(1,sizeof(pthread_mutex_t));
+	i = 0;
+	while (i < len)
 	{
-		forks[i] = malloc(sizeof(pthread_mutex_t));
+		res[i] = ft_calloc_and_check(1,sizeof(philosophers_t));
+		res[i]->waiter = waiter;
+		res[i]->time_to_lust_meal = ft_calloc_and_check(1, sizeof(uint64_t));
+		res[i]->forks = forks;
 		i++;
 	}
-	forks[i] = 0;
-	all = malloc((len + 1) * sizeof(t_all *));
-	if (!all)
-		ft_exit_error(MSG_ERR_MALLOC);
-	i = 0;
-	while (i < (int)len)
-	{
-		all[i] = malloc(sizeof (t_all));
-		if (!all)
-			ft_exit_error(MSG_ERR_MALLOC);
-		all[i]->i =  malloc(sizeof (uint64_t));
+	return (res);;
 
-		*(all[i]->i) = 1;
-		all[i]->last_meal = malloc(sizeof(uint64_t));	
-		all[i]->forks = forks;
-		all[i]->waiter = waiter;
-		all[i]->fix_get_time = fix_time;
-		i++;
-	}
-	all[i] = NULL;
-	return (all);
 }
 
 uint64_t g_last_meal[4];
 
-void *ft_live(t_all *all)
+void *ft_live(philosophers_t *ph)
 {
 	int i;
 	i = 0;
-	while (i++ < 10 )
+	while (1)
 	{
-		pthread_mutex_lock(all->forks[all->left_fork]);
-		printf(MSG_FORK,ft_get_time() - all->start_time, all->id_philo );
-		pthread_mutex_lock(all->forks[all->right_fork]);
-		printf(MSG_FORK2,ft_get_time() - all->start_time, all->id_philo );
-		printf(MSG_EAT,ft_get_time() - all->start_time, all->id_philo );
-		ft_fix_usleep(all->time_to_eat);
-		//usleep(all->time_to_eat * 1000);
-		g_last_meal[all->id_philo - 1] = ft_get_time() ;
-		*(all->i) += 1;
-		//*(all->last_meal) = ft_get_time();
-		pthread_mutex_unlock(all->forks[all->left_fork]);
-		pthread_mutex_unlock(all->forks[all->right_fork]);
-		printf(MSG_SLEEP,ft_get_time() - all->start_time, all->id_philo );
-		ft_fix_usleep(all->time_to_sleep);
-		//usleep(all->time_to_sleep * 1000);
-		printf(MSG_THINK,ft_get_time() - all->start_time, all->id_philo );
+		if (pthread_mutex_lock(ph->waiter))
+			printf(MSG_ERR_MUTEX);
+		if (pthread_mutex_lock(ph->forks[ph->fork_left]))
+			printf(MSG_ERR_MUTEX);
+		printf(MSG_FORK, ft_get_time() - ph->time_to_start, ph->id,
+				ph->fork_left);
+		if (pthread_mutex_lock(ph->forks[ph->fork_right]))
+			printf(MSG_ERR_MUTEX);
+		printf(MSG_FORK2, ft_get_time() - ph->time_to_start, ph->id,
+			   ph->fork_right);
+		if (pthread_mutex_unlock(ph->waiter))
+			printf(MSG_ERR_MUTEX);
+		//printf(MSG_EAT, ft_get_time() - ph->time_to_start, ph->id);
+		ft_fix_usleep(ph->time_to_eat);
+		*ph->time_to_lust_meal = ft_get_time();
+		if (pthread_mutex_unlock(ph->forks[ph->fork_left]))
+			printf(MSG_ERR_MUTEX);
+		if (pthread_mutex_unlock(ph->forks[ph->fork_right]))
+			printf(MSG_ERR_MUTEX);
+		printf(MSG_SLEEP, ft_get_time() - ph->time_to_start, ph->id);
+		ft_fix_usleep(ph->time_to_sleep);
+		printf(MSG_THINK, ft_get_time() - ph->time_to_start, ph->id);
+		i++;
+		if (ph->number_of_cycles && (int)ph->number_of_cycles == i)
+			break;
 	}
-
 	return (0);
 }
 
-void *ft_start_simulation(t_all **all)
+void ft_start_simulation(philosophers_t **ph)
 {
 	int i;
-	uint64_t start_time;
-	int len;
-	len = all[0]->philo_nbr % 2;
-	i = 0;
-	t_all *a0;
-	t_all *a1;
-	t_all *a2;
-	t_all *a3;
-	a0 = all[0];
-	a1 = all[1];
-	a2 = all[2];
-	a3 = all[3];
-	start_time = ft_get_time();
-		all[0]->start_time  = start_time;
-		*(all[0]->last_meal) = start_time;
-		all[0]->id_philo = 0 + 1;
-		pthread_create(&all[0]->tread_philosofer,0,(void *)ft_live,all[0]);
-		all[2]->start_time  = start_time;
-		*(all[2]->last_meal) = start_time;
-		all[2]->id_philo = 2 + 1;
-		ft_fix_usleep(all[0]->time_to_eat);
-		pthread_create(&all[2]->tread_philosofer,0,(void *)ft_live,all[2]);
-		all[1]->start_time  = start_time;
-		*(all[1]->last_meal) = start_time;
-		all[1]->id_philo = 1 + 1;
-		pthread_create(&all[1]->tread_philosofer,0,(void *)ft_live,all[1]);
-		all[3]->start_time  = start_time;
-		*(all[3]->last_meal) = start_time;
-		all[3]->id_philo = 3 + 1;
-		pthread_create(&all[3]->tread_philosofer,0,(void *)ft_live,all[3]);
-	while ( i <  (int)all[0]->philo_nbr)
-	{
+	uint64_t time_to_start;
+	pthread_t **threads;
 
-		//usleep(1000);
-		//Ошибочка ?
+	threads = ft_calloc_and_check(ph[0]->nbr_ph + 1, sizeof(pthread_t *));
+	i = 0;
+	while (i < ph[0]->nbr_ph)
+		threads[i++] = ft_calloc_and_check(ph[0]->nbr_ph, sizeof(pthread_t));
+	time_to_start = ft_get_time();
+	i = 0;
+	while (i < ph[0]->nbr_ph)
+	{
+		if (i % 2 == 0)
+		{
+			ph[i]->time_to_start = time_to_start;
+			ph[i]->time_to_die = time_to_start;
+			pthread_create(threads[i], 0, (void *) ft_live, ph[i]);
+		}
 		i++;
 	}
-	uint64_t test;
-	test = 0;
 	i = 0;
-//	while (1)
-//	{
-//		ft_fix_usleep(all[0]->time_to_die/2);
-//		pthread_mutex_lock(all[0]->fix_get_time);
-//		test =  g_last_meal[0] - start_time;
-//		// if (test > all[i]->time_to_die)
-//		// {
-//		// 	break;
-//		// }
-//		pthread_mutex_unlock(all[0]->fix_get_time);
-//		if (i >= (int) all[i]->philo_nbr - 1)
-//			i = 0;
-//		else
-//			i++;
-//		printf("---------------------%llu\n",test);
-//	}
-	t_all *a;
-	a = all[i];
-	sleep(3);
-printf("%llu Кто то умер",test);
-
-
-	return (0);
-}
-
-void ft_init(t_all **all)
-{
-	int i;
-	pthread_t waiter;
-
-	i = 0;
-	i = 2 % 2;
-	pthread_mutex_init(all[0]->fix_get_time, 0);
-	while (all[i])
+	while (i < ph[0]->nbr_ph)
 	{
-		all[i]->left_fork = i;
-		pthread_mutex_init(all[i]->forks[i], 0);
-		if (i == (int)all[i]->philo_nbr - 1)
-			all[i]->right_fork = 0;
+		if (i % 2 != 0)
+		{
+			ph[i]->time_to_start = time_to_start;
+			ph[i]->time_to_die = time_to_start;
+			pthread_create(threads[i], 0, (void *) ft_live, ph[i]);
+		}
+		i++;
+	}
+	i = 0;
+	while (1)
+	{
+		if ( ft_get_time() -  *ph[i]->time_to_lust_meal)
+			break;
+		if (i == ph[0]->nbr_ph -1 )
+			i = 0;
 		else
-			all[i]->right_fork = i + 1;
-		i++;
+			i++;
+		sleep(1);
 	}
-	pthread_create(&waiter,0,(void *) ft_start_simulation,(all)); //поломалась?
-	pthread_join(waiter, 0);
 }
 
-t_all **ft_check_args(char *argv[])
+
+philosophers_t **ft_init(char *argv[])
 {
 	int i;
-	t_all **all;
-	int len;
-	i = 1;
-	while(argv[i])
-		if (ft_check_nbr_to_str(argv[i++]))
-			return (0); // УТЕЧКА
-	len = ft_atoitest(argv[1]);
-	all = ft_memory_allocation(len);
+	philosophers_t **ph;
+
+	ph = ft_memory_phocation(ft_atoitest(argv[1]));
 	i = 0;
-	while (all[i])
+	while (ph[i])
 	{
-		all[i]->philo_nbr = ft_atoitest(argv[1]);
-		all[i]->time_to_die = ft_atoitest(argv[2]);
-		all[i]->time_to_eat = ft_atoitest(argv[3]);
-		all[i]->time_to_sleep = ft_atoitest(argv[4]);
-		all[i]->eat_nbr = ft_atoitest(argv[5]);
+		ph[i]->nbr_ph = ft_atoitest(argv[1]);
+		ph[i]->time_to_die = ft_atoitest(argv[2]);
+		ph[i]->time_to_eat = ft_atoitest(argv[3]);
+		ph[i]->time_to_sleep = ft_atoitest(argv[4]);
+		ph[i]->number_of_cycles = ft_atoitest(argv[5]);
+		ph[i]->id = i + 1;
+		ph[i]->fork_left = i;
+		if (i == ph[i]->nbr_ph -1)
+			ph[i]->fork_right = 0;
+		else
+			ph[i]->fork_right = i + 1;
+		pthread_mutex_init(ph[i]->forks[i],0);
 		i++;
 	}
-
-	return (all);
+	if (pthread_mutex_init(ph[0]->waiter,0))
+		ft_exit_error(MSG_ERR_MUTEX);
+	return (ph);
 }
+
 int main(int argc, char *argv[])
 {
-	t_all **all;
+	philosophers_t **ph;
 	if (argc < 5 || argc > 7)
 		ft_exit_error("check args");
-	all = ft_check_args(argv);
-	if (!all)
-		ft_exit_error("check args");
-	ft_init(all);
+	ph = ft_init(argv);
+	ft_start_simulation(ph);
     return(0);
 }
