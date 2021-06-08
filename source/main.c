@@ -78,7 +78,7 @@ t_all **ft_memory_allocation(unsigned len)
 	i = 0;
 	while (i < (int)len)
 	{
-		forks[i] = malloc(sizeof(pthread_mutex_t) * (len + 1));
+		forks[i] = malloc(sizeof(pthread_mutex_t));
 		i++;
 	}
 	forks[i] = 0;
@@ -91,6 +91,9 @@ t_all **ft_memory_allocation(unsigned len)
 		all[i] = malloc(sizeof (t_all));
 		if (!all)
 			ft_exit_error(MSG_ERR_MALLOC);
+		all[i]->i =  malloc(sizeof (uint64_t));
+
+		*(all[i]->i) = 1;
 		all[i]->last_meal = malloc(sizeof(uint64_t));	
 		all[i]->forks = forks;
 		all[i]->waiter = waiter;
@@ -101,27 +104,30 @@ t_all **ft_memory_allocation(unsigned len)
 	return (all);
 }
 
+uint64_t g_last_meal[4];
+
 void *ft_live(t_all *all)
 {
-	//int i;
-	while (1)
+	int i;
+	i = 0;
+	while (i++ < 10 )
 	{
-		pthread_mutex_lock(all->waiter);
 		pthread_mutex_lock(all->forks[all->left_fork]);
-		printf(MSG_FORK,all->id_philo,ft_get_time() - all->start_time);
+		printf(MSG_FORK,ft_get_time() - all->start_time, all->id_philo );
 		pthread_mutex_lock(all->forks[all->right_fork]);
-		printf(MSG_FORK,all->id_philo,ft_get_time() - all->start_time);
-		printf(MSG_EAT,all->id_philo,ft_get_time() - all->start_time);
-		pthread_mutex_unlock(all->waiter);
+		printf(MSG_FORK2,ft_get_time() - all->start_time, all->id_philo );
+		printf(MSG_EAT,ft_get_time() - all->start_time, all->id_philo );
 		ft_fix_usleep(all->time_to_eat);
-		pthread_mutex_lock(all->fix_get_time);
-		*(all->last_meal) = (unsigned long long)(ft_get_time() - all->start_time);
-		pthread_mutex_unlock(all->fix_get_time);
+		//usleep(all->time_to_eat * 1000);
+		g_last_meal[all->id_philo - 1] = ft_get_time() ;
+		*(all->i) += 1;
+		//*(all->last_meal) = ft_get_time();
 		pthread_mutex_unlock(all->forks[all->left_fork]);
 		pthread_mutex_unlock(all->forks[all->right_fork]);
-		printf(MSG_SLEEP,all->id_philo,ft_get_time() - all->start_time);
+		printf(MSG_SLEEP,ft_get_time() - all->start_time, all->id_philo );
 		ft_fix_usleep(all->time_to_sleep);
-		printf(MSG_THINK,all->id_philo,ft_get_time() - all->start_time);
+		//usleep(all->time_to_sleep * 1000);
+		printf(MSG_THINK,ft_get_time() - all->start_time, all->id_philo );
 	}
 
 	return (0);
@@ -134,16 +140,23 @@ void *ft_start_simulation(t_all **all)
 	int len;
 	len = all[0]->philo_nbr % 2;
 	i = 0;
-
+	t_all *a0;
+	t_all *a1;
+	t_all *a2;
+	t_all *a3;
+	a0 = all[0];
+	a1 = all[1];
+	a2 = all[2];
+	a3 = all[3];
 	start_time = ft_get_time();
 		all[0]->start_time  = start_time;
 		*(all[0]->last_meal) = start_time;
 		all[0]->id_philo = 0 + 1;
 		pthread_create(&all[0]->tread_philosofer,0,(void *)ft_live,all[0]);
-		usleep(100);
 		all[2]->start_time  = start_time;
 		*(all[2]->last_meal) = start_time;
 		all[2]->id_philo = 2 + 1;
+		ft_fix_usleep(all[0]->time_to_eat);
 		pthread_create(&all[2]->tread_philosofer,0,(void *)ft_live,all[2]);
 		all[1]->start_time  = start_time;
 		*(all[1]->last_meal) = start_time;
@@ -161,25 +174,27 @@ void *ft_start_simulation(t_all **all)
 		i++;
 	}
 	uint64_t test;
+	test = 0;
 	i = 0;
-	while (1)
-	{
-		ft_fix_usleep(all[0]->time_to_die /4);
-		pthread_mutex_lock(all[0]->fix_get_time);
-		test =   (ft_get_time() - *(all[0]->last_meal));
-		// if (test > all[i]->time_to_die)
-		// {
-		// 	break;
-		// }
-		pthread_mutex_unlock(all[0]->fix_get_time);
-		if (i >= (int) all[i]->philo_nbr - 1)
-			i = 0;
-		else
-			i++;
-		printf("---------------------%llu\n",test);
-	}
+//	while (1)
+//	{
+//		ft_fix_usleep(all[0]->time_to_die/2);
+//		pthread_mutex_lock(all[0]->fix_get_time);
+//		test =  g_last_meal[0] - start_time;
+//		// if (test > all[i]->time_to_die)
+//		// {
+//		// 	break;
+//		// }
+//		pthread_mutex_unlock(all[0]->fix_get_time);
+//		if (i >= (int) all[i]->philo_nbr - 1)
+//			i = 0;
+//		else
+//			i++;
+//		printf("---------------------%llu\n",test);
+//	}
 	t_all *a;
 	a = all[i];
+	sleep(3);
 printf("%llu Кто то умер",test);
 
 
@@ -229,6 +244,7 @@ t_all **ft_check_args(char *argv[])
 		all[i]->eat_nbr = ft_atoitest(argv[5]);
 		i++;
 	}
+
 	return (all);
 }
 int main(int argc, char *argv[])

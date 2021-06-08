@@ -28,6 +28,8 @@ $(OBJS_PATH):
 $(OBJS_PATH)%.o : $(SRCS_PATH)%.c  $(HEAD_PATH)	
 	$(CC) $(OFLAGS) $< -o $@
 
+test:
+	$(CC) $(DFLAGS) test.c -o test
 clean:
 	$(MAKE_LIBFT) clean
 	$(RM) $(OBJS_PATH)
@@ -37,3 +39,4 @@ fclean: clean
 	$(RM) $(NAME)
 
 re: fclean all
+.PHONY: test
