@@ -4,15 +4,16 @@
 # include <stdio.h>
 # include <pthread.h>
 # include <sys/time.h>
-
-# define MSG_ERR_MALLOC "maloc fail \x55\x2b\x32\x36\x32\x30\n"
-# define MSG_ERR_TIME "get time fail \x55\x2b\x32\x36\x32\x30\n"
-# define MSG_ERR_MUTEX "Mutex fail  \x55\x2b\x32\x36\x32\x30\n"
-# define MSG_FORK	"%lld %d has taken a fork %u \xf0\x9f\xa5\x84\n"
-# define MSG_FORK2	"%lld %d has taken a fork %u \xf0\x9f\x94\xaa\n"
-# define MSG_EAT	"%lld %d is eating \xf0\x9f\x8d\x9c\n"
-# define MSG_SLEEP	"%lld %d sleeping \xf0\x9f\x9b\x8c\n"
-# define MSG_THINK	"%lld %d is thinking \xf0\x9f\xa4\x94\n"
+# include <string.h> // удалить
+# include <errno.h> // удалить
+# define MSG_ERR_MALLOC "maloc fail \xf0\x9f\x92\x80\n"
+# define MSG_ERR_TIME "get time fail \xf0\x9f\x92\x80\n"
+# define MSG_ERR_MUTEX "Mutex fail  \xf0\x9f\x92\x80\n"
+# define MSG_FORK	"%lld %d has taken a fork \n"
+# define MSG_FORK2	"%lld %d has taken a fork \n"
+# define MSG_EAT	"%lld %d is eating \n"
+# define MSG_SLEEP	"%lld %d sleeping \n"
+# define MSG_THINK	"%lld %d is thinking \n"
 
 typedef struct philosophers_s
 {
@@ -26,8 +27,14 @@ typedef struct philosophers_s
 	unsigned 	number_of_cycles;
 	pthread_mutex_t **forks;
 	pthread_mutex_t *waiter;
-	uint64_t	time_to_start;
+	uint64_t	*time_to_start;
+	unsigned	*start;
 	uint64_t	*time_to_lust_meal;
+	uint64_t	*eat;
+	uint64_t	*fork1;
+	uint64_t	*fork2;
+	uint64_t	*sleep;
+	uint64_t	*think;
 } 				philosophers_t;
 
 #endif

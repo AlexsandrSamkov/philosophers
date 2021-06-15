@@ -9,7 +9,7 @@ OBJS		=	$(addprefix $(OBJS_PATH),$(OBJS_LIST))
 RM			= 	rm -rf
 CC			=	gcc
 CFLAGS		=	-Wall -Wextra -Werror -I $(HEAD_PATH)
-DFLAGS		=	 -g -Wall -Wextra -Werror -I $(HEAD_PATH)
+DFLAGS		=	-g -Wall -Wextra -Werror -I $(HEAD_PATH)
 MAKE_LIBFT	=	make -C libs/libft
 LIBFT		=	libs/libft/libft.a
 
