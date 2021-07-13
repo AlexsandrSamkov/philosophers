@@ -17,8 +17,8 @@ all: $(NAME)
 $(NAME): $(OBJS_PATH) $(OBJS) $(HEAD_PATH) $(LIBFT)
 	$(CC) $(CFLAGS) $(OBJS) $(LIBFT) -o $(NAME)
 
-debug:
-	$(CC) $(DFLAGS) $(SRCS) $(LIBFT)  -o $(NAME)
+debug:#-g -fsanitize=address
+	$(CC)   $(DFLAGS) $(SRCS) $(LIBFT)  -o $(NAME)
 
 $(LIBFT):
 		$(MAKE_LIBFT)
