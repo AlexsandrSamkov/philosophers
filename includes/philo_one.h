@@ -15,17 +15,26 @@
 # define MSG_SLEEP	"%lld %d sleeping \n"
 # define MSG_THINK	"%lld %d is thinking \n"
 
+typedef struct options
+{
+	unsigned 	nbr_ph;
+	unsigned 	time_to_die;
+	unsigned 	time_to_eat;
+	unsigned 	time_to_sleep;
+	int		 	number_of_cycles;
+	pthread_mutex_t *forks;
+};
+
 typedef struct philosophers_s
 {
-	int 	nbr_ph;
 	unsigned 	time_to_die;
 	unsigned 	time_to_eat;
 	unsigned 	time_to_sleep;
 	unsigned 	fork_left;
 	unsigned 	fork_right;
 	unsigned 	id;
-	unsigned 	number_of_cycles;
-	pthread_mutex_t **forks;
+	
+	pthread_mutex_t *forks;
 	pthread_mutex_t *waiter;
 	uint64_t	*time_to_start;
 	unsigned	*start;
