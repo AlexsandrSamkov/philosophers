@@ -18,7 +18,7 @@ void						ft_fix_usleep(uint64_t msec)
 	uint64_t				start;
 	start = ft_get_time();
 	while (ft_get_time() - start < msec)
-		usleep(50);
+		usleep(500);
 }
 
 int ft_check_valid_args(char **args)
@@ -95,14 +95,16 @@ philosophers_t **ft_get_philosphers(options_t *options)
 	philosophers_t **philosophers;
 	pthread_mutex_t *forks;
 	int i;
-
+	int j;
 	philosophers = malloc(options->number_of_philosophers * sizeof(philosophers_t *));
 	if (!philosophers)
 		return (0);
 	forks = malloc(options->number_of_philosophers * sizeof(pthread_mutex_t));
+
 	// if (forks)
 	// 	return((philosophers_t **)ft_free(&philosophers, 0));
 	i = 0;
+	j = 5;
 	while (i < options->number_of_philosophers)
 	{
 		philosophers[i] = malloc(sizeof(philosophers_t));
@@ -125,7 +127,8 @@ philosophers_t **ft_get_philosphers(options_t *options)
 		philosophers[i]->id = i + 1;
 		philosophers[i]->forks = forks;
 		philosophers[i]->options = options;
-
+		pthread_mutex_init(&philosophers[i]->msg,0);
+		pthread_mutex_lock(&philosophers[i]->msg);
 		philosophers[i]->fork1 = malloc(sizeof(uint64_t));
 		philosophers[i]->fork2 = malloc(sizeof(uint64_t));
 		philosophers[i]->eat = malloc(sizeof(uint64_t));
@@ -154,16 +157,16 @@ void *ft_msg(philosophers_t *ph)
 {
 	while (1)
 	{
-		while (*ph->fork1)
-			ft_print_msg(MSG_FORK, *ph->fork1 - ph->time_to_start, ph->id, ph->fork1);
-		while (*ph->fork2)			
-			ft_print_msg(MSG_FORK2, *ph->fork2 - ph->time_to_start, ph->id, ph->fork2);
-		while (*ph->eat)
-			ft_print_msg(MSG_EAT, *ph->eat - ph->time_to_start, ph->id, ph->eat);
-		while (*ph->sleep)
-			ft_print_msg(MSG_SLEEP, *ph->sleep - ph->time_to_start, ph->id, ph->sleep);
-		while (*ph->think)
-			ft_print_msg(MSG_THINK, *ph->think - ph->time_to_start, ph->id, ph->think);
+		pthread_mutex_lock(&ph->msg);
+		ft_print_msg(MSG_FORK, *ph->fork1 - ph->time_to_start, ph->id,ph->fork1);
+		pthread_mutex_lock(&ph->msg);
+		ft_print_msg(MSG_FORK2, *ph->fork2 - ph->time_to_start, ph->id,ph->fork2);
+		pthread_mutex_lock(&ph->msg);
+		ft_print_msg(MSG_EAT, *ph->eat - ph->time_to_start, ph->id, ph->eat);
+		pthread_mutex_lock(&ph->msg);
+		ft_print_msg(MSG_SLEEP, *ph->sleep - ph->time_to_start, ph->id, ph->sleep);
+		pthread_mutex_lock(&ph->msg);
+		ft_print_msg(MSG_THINK, *ph->think - ph->time_to_start, ph->id,ph->think);
 	}
 	return (0);
 }
@@ -180,17 +183,22 @@ void *ft_live(philosophers_t *philosophers)
 	{
 		pthread_mutex_lock(&philosophers->forks[philosophers->fork_left]);
 		*philosophers->fork1 = ft_get_time();
+		pthread_mutex_unlock(&philosophers->msg);
 		pthread_mutex_lock(&philosophers->forks[philosophers->fork_right]);
 		*philosophers->fork2 = ft_get_time();
-		ft_fix_usleep(philosophers->options->time_to_eat);
+		pthread_mutex_unlock(&philosophers->msg);
 		*philosophers->eat = ft_get_time();
+		ft_fix_usleep(philosophers->options->time_to_eat);
+		pthread_mutex_unlock(&philosophers->msg);
 		pthread_mutex_unlock(&philosophers->forks[philosophers->fork_left]);
 		pthread_mutex_unlock(&philosophers->forks[philosophers->fork_right]);
-		
 		*philosophers->time_to_lust_meat = ft_get_time();
 		*philosophers->sleep = ft_get_time();
+		pthread_mutex_unlock(&philosophers->msg);
 		ft_fix_usleep(philosophers->options->time_to_sleep);
+		
 		*philosophers->think = ft_get_time();
+		pthread_mutex_unlock(&philosophers->msg);
 		i++;
 		if (philosophers->options->number_of_times_each_philosopher_must_eat != -1
 			&& (int)philosophers->options->number_of_times_each_philosopher_must_eat == i)
@@ -227,7 +235,6 @@ void ft_start_simulation(philosophers_t **philosophers)
 		*philosophers[i]->time_to_lust_meat = time_to_start;
 		pthread_create(&threads[i], 0, (void *) ft_live, philosophers[i]);
 		i++;
-		usleep(500);
 	}
 
 	i = 0;

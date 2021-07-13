@@ -29,6 +29,7 @@ typedef struct philosophers_s
 	int id;
 	uint64_t time_to_start;
 	uint64_t *time_to_lust_meat;
+	pthread_mutex_t msg;
 	pthread_mutex_t *forks;
 	unsigned fork_left;
 	unsigned fork_right;
