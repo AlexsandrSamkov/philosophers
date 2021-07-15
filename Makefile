@@ -2,7 +2,7 @@ NAME		=	philo_one
 OBJS_PATH	=	objects/
 SRCS_PATH	=	source/
 HEAD_PATH	=	includes/
-SRCS_LIST	= main.c
+SRCS_LIST	= main.c init.c simulation.c utils.c
 SRCS		=	$(addprefix $(SRCS_PATH), $(SRCS_LIST))	
 OBJS_LIST	=	$(patsubst %.c, %.o, $(SRCS_LIST))
 OBJS		=	$(addprefix $(OBJS_PATH),$(OBJS_LIST))
@@ -26,7 +26,7 @@ $(OBJS_PATH):
 	mkdir -p $(OBJS_PATH)
 
 $(OBJS_PATH)%.o : $(SRCS_PATH)%.c  $(HEAD_PATH)	
-	$(CC) $(OFLAGS) $< -o $@
+	$(CC) -I $(HEAD_PATH) $(OFLAGS) $< -o $@
 
 test:
 	$(CC) $(DFLAGS) test.c -o test

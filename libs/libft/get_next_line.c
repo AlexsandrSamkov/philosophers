@@ -6,7 +6,7 @@
 /*   By: weambros <weambros@student.21-school.ru    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2020/11/23 08:31:59 by weambros          #+#    #+#             */
-/*   Updated: 2021/05/27 18:26:54 by weambros         ###   ########.fr       */
+/*   Updated: 2021/07/13 21:44:10 by weambros         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,6 +53,7 @@ static int	ft_check_line(char **line, char **save)
 {
 	char	*check;
 	char	*tmp;
+
 	check = ft_strchr(*save, '\n');
 	if (check)
 	{

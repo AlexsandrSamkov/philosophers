@@ -4,41 +4,45 @@
 # include <stdio.h>
 # include <pthread.h>
 # include <sys/time.h>
-# include <string.h> // удалить
-# include <errno.h> // удалить
-# define MSG_ERR_MALLOC "maloc fail \xf0\x9f\x92\x80\n"
-# define MSG_ERR_TIME "get time fail \xf0\x9f\x92\x80\n"
-# define MSG_ERR_MUTEX "Mutex fail  \xf0\x9f\x92\x80\n"
 # define MSG_FORK	"%lld %d has taken a fork \n"
 # define MSG_FORK2	"%lld %d has taken a fork \n"
 # define MSG_EAT	"%lld %d is eating \n"
 # define MSG_SLEEP	"%lld %d sleeping \n"
 # define MSG_THINK	"%lld %d is thinking \n"
 
-typedef struct options_s
+typedef struct s_options
 {
-	int		number_of_philosophers;
-	unsigned 		time_to_die;
-	unsigned 		time_to_eat;
-	unsigned 		time_to_sleep;
-	int		 		number_of_times_each_philosopher_must_eat;//
-} options_t;
+	int				number_of_philosophers;
+	int		 		number_of_times_each_philosopher_must_eat;
+	unsigned int	time_to_die;
+	unsigned int	time_to_eat;
+	unsigned int	time_to_sleep;
+	pthread_mutex_t	msg;
+}	t_options;
 
-typedef struct philosophers_s
+typedef struct s_philosophers
 {
-	int id;
-	uint64_t time_to_start;
-	uint64_t *time_to_lust_meat;
-	pthread_mutex_t msg;
-	pthread_mutex_t *forks;
-	unsigned fork_left;
-	unsigned fork_right;
-	options_t *options;
-	uint64_t *fork1;
-	uint64_t *fork2;
-	uint64_t *eat;
-	uint64_t *sleep;
-	uint64_t *think;
-} 				philosophers_t;
+	int				id;
+	unsigned int	fork_left;
+	unsigned int	fork_right;
+	uint64_t		time_to_start;
+	uint64_t		time_to_lust_meat;
+	pthread_mutex_t	*forks;
+	t_options		*options;
+	int 			count;
+}					t_philosophers;
+
+int				ft_atou(char *s);
+uint64_t		ft_get_time(void);
+int				print_msg_and_exit(char *s, int ret);
+void			ft_fix_usleep(uint64_t msec);
+void			*ft_live(t_philosophers *ph);
+void			ft_is_dead(t_philosophers **ph);
+void			ft_start_simulation(t_philosophers **ph);
+int				ft_check_valid_args(char **args);
+t_options		*ft_get_options(char **argv);
+t_philosophers	**ft_get_philosphers(t_options *options);
+int				ft_get_init_philospher(t_philosophers **philosophers, \
+pthread_mutex_t *forks);
 
 #endif
