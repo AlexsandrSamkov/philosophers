@@ -18,6 +18,23 @@ int	ft_check_valid_args(char **args)
 	return (0);
 }
 
+t_philosophers	**ft_clean(t_options *options, \
+			t_philosophers **philosophers, pthread_mutex_t *forks, int parameter)
+{
+	int i;
+
+	i = 0;
+	while (i < parameter)
+		pthread_mutex_destroy(&forks[i++]);
+	free(forks);
+	free(options);
+	i = 0;
+	while  (i < parameter)
+		free(philosophers[i++]);
+	free(philosophers);
+	return (0);
+}
+
 t_options	*ft_get_options(char **argv)
 {
 	t_options	*options;
@@ -76,14 +93,16 @@ t_philosophers	**ft_get_philosphers(t_options *options)
 	philosophers =\
 	malloc(options->number_of_philosophers * sizeof(t_philosophers *));
 	if (!philosophers)
-		return (0);
+		return (ft_clean(options, philosophers,  NULL, DEFAULT));
 	forks =\
 	malloc(options->number_of_philosophers * sizeof(pthread_mutex_t));
 	if (!forks)
-		return (0);
+		return (ft_clean(options, philosophers, NULL, DEFAULT));
 	while (i < options->number_of_philosophers)
 	{
 		philosophers[i] = malloc(sizeof(t_philosophers));
+		if (!philosophers[i])
+			return (ft_clean(options, philosophers , forks, i));
 		philosophers[i]->options = options;
 		pthread_mutex_init(&forks[i], 0);
 		i++;

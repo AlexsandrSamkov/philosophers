@@ -1,5 +1,6 @@
 #include "../includes/philo_one.h"
 
+
 int	main(int argc, char *argv[])
 {
 	t_philosophers	**philosophers;
