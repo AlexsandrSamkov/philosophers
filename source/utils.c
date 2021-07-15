@@ -42,3 +42,27 @@ void	ft_fix_usleep(uint64_t msec)
 	while (ft_get_time() - start < msec)
 		usleep(500);
 }
+
+int	ft_abs(int n)
+{
+	if (n < 0)
+		n *= -1;
+	return (n);
+}
+
+t_philosophers	**ft_clean(t_options *options, \
+t_philosophers **philosophers, pthread_mutex_t *forks, int parameter)
+{
+	int	i;
+
+	i = 0;
+	while (i < parameter)
+		pthread_mutex_destroy(&forks[i++]);
+	free(forks);
+	free(options);
+	i = 0;
+	while (i < parameter)
+		free(philosophers[i++]);
+	free(philosophers);
+	return (0);
+}

@@ -18,23 +18,6 @@ int	ft_check_valid_args(char **args)
 	return (0);
 }
 
-t_philosophers	**ft_clean(t_options *options, \
-			t_philosophers **philosophers, pthread_mutex_t *forks, int parameter)
-{
-	int i;
-
-	i = 0;
-	while (i < parameter)
-		pthread_mutex_destroy(&forks[i++]);
-	free(forks);
-	free(options);
-	i = 0;
-	while  (i < parameter)
-		free(philosophers[i++]);
-	free(philosophers);
-	return (0);
-}
-
 t_options	*ft_get_options(char **argv)
 {
 	t_options	*options;
@@ -44,6 +27,7 @@ t_options	*ft_get_options(char **argv)
 	options = malloc(sizeof(t_options));
 	if (!options)
 		return (0);
+		
 	options->number_of_philosophers = ft_atou(argv[1]);
 	options->time_to_die = ft_atou(argv[2]);
 	options->time_to_eat = ft_atou(argv[3]);
@@ -52,9 +36,17 @@ t_options	*ft_get_options(char **argv)
 	if (options->number_of_philosophers <= 0 \
 		|| options->time_to_die < 120 \
 		|| options->time_to_eat < 60 \
-		|| options->time_to_sleep < 60)
+		|| options->time_to_sleep < 60
+		|| ft_abs(options->time_to_die \
+		- options->time_to_eat - options->time_to_sleep) < 10)
 		return (0);
 	return (options);
+}
+
+void ft_fix_philosophers(t_philosophers **philosophers)
+{
+	philosophers[0]->fork_left = 0;
+	philosophers[0]->fork_right = 0;
 }
 
 int	ft_get_init_philospher(t_philosophers **philosophers, \
@@ -80,6 +72,8 @@ pthread_mutex_t *forks)
 		philosophers[i]->forks = forks;
 		i++;
 	}
+	if (philosophers[0]->options->number_of_times_each_philosopher_must_eat == 1)
+		ft_fix_philosophers(philosophers);
 	return (1);
 }
 
@@ -93,7 +87,7 @@ t_philosophers	**ft_get_philosphers(t_options *options)
 	philosophers =\
 	malloc(options->number_of_philosophers * sizeof(t_philosophers *));
 	if (!philosophers)
-		return (ft_clean(options, philosophers,  NULL, DEFAULT));
+		return (ft_clean(options, philosophers, NULL, DEFAULT));
 	forks =\
 	malloc(options->number_of_philosophers * sizeof(pthread_mutex_t));
 	if (!forks)
@@ -102,7 +96,7 @@ t_philosophers	**ft_get_philosphers(t_options *options)
 	{
 		philosophers[i] = malloc(sizeof(t_philosophers));
 		if (!philosophers[i])
-			return (ft_clean(options, philosophers , forks, i));
+			return (ft_clean(options, philosophers, forks, i));
 		philosophers[i]->options = options;
 		pthread_mutex_init(&forks[i], 0);
 		i++;

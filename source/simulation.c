@@ -30,17 +30,19 @@ void	*ft_live(t_philosophers *ph)
 void	ft_is_dead(t_philosophers **ph)
 {
 	int	i;
+	int	count;
 
 	i = 0;
-	int count;
 	count = 0;
 	while (1)
 	{
-		if ( ph[i]->count == ph[i]->options->number_of_times_each_philosopher_must_eat - 1)
+		if (ph[i]->count \
+		== ph[i]->options->number_of_times_each_philosopher_must_eat - 1)
 			count++;
-		if (count == ph[i]->options->number_of_philosophers - 1)
-			break;	
-		if (ft_get_time() - ph[i]->time_to_lust_meat >
+		if (count == ph[i]->options->number_of_philosophers &&
+		ph[i]->options->number_of_times_each_philosopher_must_eat < 0)
+			break ;
+		if ((int)(ft_get_time() - ph[i]->time_to_lust_meat) > \
 		ph[i]->options->time_to_die)
 		{
 			printf(MSG_DEATH, ft_get_time() - ph[i]->time_to_start, ph[i]->id);
@@ -54,9 +56,9 @@ void	ft_is_dead(t_philosophers **ph)
 	}
 }
 
-void ft_clean_treads(pthread_t *threads,int quantity)
+void	ft_clean_treads(pthread_t *threads, int quantity)
 {
-	int i;
+	int	i;
 
 	i = 0;
 	while (i < quantity)
@@ -75,7 +77,8 @@ int	ft_start_simulation(t_philosophers **ph)
 	malloc(ph[0]->options->number_of_philosophers * sizeof(pthread_t));
 	if (!threads)
 	{
-		ft_clean(ph[0]->options,ph,ph[0]->forks,ph[0]->options->number_of_philosophers);
+		ft_clean(ph[0]->options, ph, ph[0]->forks, \
+		ph[0]->options->number_of_philosophers);
 		return (0);
 	}
 	time_to_start = ft_get_time();
@@ -87,6 +90,6 @@ int	ft_start_simulation(t_philosophers **ph)
 		i++;
 	}
 	ft_is_dead(ph);
-	ft_clean_treads(threads,ph[0]->options->number_of_philosophers);
+	ft_clean_treads(threads, ph[0]->options->number_of_philosophers);
 	return (1);
 }
