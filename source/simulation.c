@@ -1,7 +1,10 @@
-#include "../includes/philo_one.h"
+#include "../includes/philo.h"
 
 void	*ft_live(t_philosophers *ph)
 {
+	int	i;
+
+	i = 0;
 	if (ph->id % 2 == 0 && ph->id != 1)
 		ft_fix_usleep(ph->options->time_to_eat / 2);
 	while (1)
@@ -18,12 +21,11 @@ void	*ft_live(t_philosophers *ph)
 		printf(MSG_SLEEP, ft_get_time() - ph->time_to_start, ph->id);
 		ft_fix_usleep(ph->options->time_to_sleep);
 		printf(MSG_THINK, ft_get_time() - ph->time_to_start, ph->id);
-		ph->count++;
-		if (ph->options->number_of_times_each_philosopher_must_eat != -1
-			&& (int)ph->options->number_of_times_each_philosopher_must_eat \
-			== ph->count)
+		if (ph->options->nbr_of_times_each_ph_must_eat != -1
+			&& (int)ph->options->nbr_of_times_each_ph_must_eat == ++i)
 			break ;
 	}
+	ph->finish = 1;
 	return (0);
 }
 
@@ -36,13 +38,12 @@ void	ft_is_dead(t_philosophers **ph)
 	count = 0;
 	while (1)
 	{
-		if (ph[i]->count \
-		== ph[i]->options->number_of_times_each_philosopher_must_eat - 1)
-			count++;
-		if (count == ph[i]->options->number_of_philosophers &&
-		ph[i]->options->number_of_times_each_philosopher_must_eat < 0)
+		if (ph[i]->finish == 1)
+			ph[i]->finish = ++count;
+		if (count == ph[i]->options->number_of_philosophers
+			&& ph[i]->options->nbr_of_times_each_ph_must_eat > 0)
 			break ;
-		if ((int)(ft_get_time() - ph[i]->time_to_lust_meat) > \
+		if (!ph[i]->finish && (int)(ft_get_time() - ph[i]->time_to_lust_meat) > \
 		ph[i]->options->time_to_die)
 		{
 			printf(MSG_DEATH, ft_get_time() - ph[i]->time_to_start, ph[i]->id);

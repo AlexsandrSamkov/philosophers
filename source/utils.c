@@ -1,4 +1,4 @@
-#include "../includes/philo_one.h"
+#include "../includes/philo.h"
 
 int	ft_atou(char *s)
 {
@@ -9,12 +9,14 @@ int	ft_atou(char *s)
 	nbr = 0;
 	if (!s)
 		return (-1);
-	while (s[i])
+	while (s[i] && i < 10)
 	{
 		nbr *= 10;
 		nbr += (int)(s[i]) - 48;
 		i++;
 	}
+	if (nbr > 2147483647)
+		return (-1);
 	return ((int)nbr);
 }
 
@@ -23,14 +25,20 @@ uint64_t	ft_get_time(void)
 	uint64_t				to_return;
 	static struct timeval	time;
 
-	gettimeofday(&time, NULL);
+	if (gettimeofday(&time, 0) < 0)
+		return (0);
 	to_return = time.tv_sec * 1000 + time.tv_usec / 1000;
 	return (to_return);
 }
 
 int	print_msg_and_exit(char *s, int ret)
 {
-	ft_putstr_fd(s, 2);
+	int	len;
+
+	len = 0;
+	while (s[len])
+		len++;
+	write(2, s, len);
 	return (ret);
 }
 
@@ -41,13 +49,6 @@ void	ft_fix_usleep(uint64_t msec)
 	start = ft_get_time();
 	while (ft_get_time() - start < msec)
 		usleep(500);
-}
-
-int	ft_abs(int n)
-{
-	if (n < 0)
-		n *= -1;
-	return (n);
 }
 
 t_philosophers	**ft_clean(t_options *options, \

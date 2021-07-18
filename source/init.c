@@ -1,4 +1,4 @@
-#include "../includes/philo_one.h"
+#include "../includes/philo.h"
 
 int	ft_check_valid_args(char **args)
 {
@@ -27,23 +27,25 @@ t_options	*ft_get_options(char **argv)
 	options = malloc(sizeof(t_options));
 	if (!options)
 		return (0);
-		
 	options->number_of_philosophers = ft_atou(argv[1]);
 	options->time_to_die = ft_atou(argv[2]);
 	options->time_to_eat = ft_atou(argv[3]);
 	options->time_to_sleep = ft_atou(argv[4]);
-	options->number_of_times_each_philosopher_must_eat = ft_atou(argv[5]);
+	options->nbr_of_times_each_ph_must_eat = ft_atou(argv[5]);
 	if (options->number_of_philosophers <= 0 \
-		|| options->time_to_die < 120 \
+		|| options->time_to_die < 10 \
 		|| options->time_to_eat < 60 \
 		|| options->time_to_sleep < 60
 		|| ft_abs(options->time_to_die \
-		- options->time_to_eat - options->time_to_sleep) < 10)
+		- options->time_to_eat - options->time_to_sleep) < 10
+		|| options->nbr_of_times_each_ph_must_eat == 0)
 		return (0);
+	if (!options->nbr_of_times_each_ph_must_eat)
+		options->nbr_of_times_each_ph_must_eat = -1;
 	return (options);
 }
 
-void ft_fix_philosophers(t_philosophers **philosophers)
+void	ft_fix_philosophers(t_philosophers **philosophers)
 {
 	philosophers[0]->fork_left = 0;
 	philosophers[0]->fork_right = 0;
@@ -57,7 +59,7 @@ pthread_mutex_t *forks)
 	i = 0;
 	while (i < philosophers[0]->options->number_of_philosophers)
 	{
-		philosophers[i]->count = 0;
+		philosophers[i]->finish = 0;
 		if (i != philosophers[0]->options->number_of_philosophers - 1)
 		{
 			philosophers[i]->fork_left = i;
@@ -72,7 +74,7 @@ pthread_mutex_t *forks)
 		philosophers[i]->forks = forks;
 		i++;
 	}
-	if (philosophers[0]->options->number_of_times_each_philosopher_must_eat == 1)
+	if (philosophers[0]->options->number_of_philosophers == 1)
 		ft_fix_philosophers(philosophers);
 	return (1);
 }

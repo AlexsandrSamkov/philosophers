@@ -1,26 +1,29 @@
-#ifndef PHILO_ONE_H
-# define PHILO_ONE_H
-# include "../libs/libft/libft.h"
+#ifndef PHILO_H
+# define PHILO_H
 # include <stdio.h>
 # include <pthread.h>
+# include <stdlib.h>
+# include <unistd.h>
 # include <sys/time.h>
-# define DEFAULT 0
+# define DEFAULT	0
 # define MSG_FORK	"%lld %d has taken a fork \n"
 # define MSG_FORK2	"%lld %d has taken a fork \n"
 # define MSG_EAT	"%lld %d is eating \n"
 # define MSG_SLEEP	"%lld %d sleeping \n"
 # define MSG_THINK	"%lld %d is thinking \n"
-# define MSG_DEATH "%lld %d died\n"
+# define MSG_DEATH	"%lld %d died\n"
+# define MSG_ERR_INIT "philosphers init fail\n"
+# define MSG_ERR_ARGS "args fail\n"
 
 typedef struct s_options
 {
 	int				number_of_philosophers;
-	int		 		number_of_times_each_philosopher_must_eat;
-	int	time_to_die;
-	int	time_to_eat;
-	int	time_to_sleep;
+	int				nbr_of_times_each_ph_must_eat;
+	int				time_to_die;
+	int				time_to_eat;
+	int				time_to_sleep;
 	pthread_mutex_t	msg;
-}	t_options;
+}					t_options;
 
 typedef struct s_philosophers
 {
@@ -31,7 +34,7 @@ typedef struct s_philosophers
 	uint64_t		time_to_lust_meat;
 	pthread_mutex_t	*forks;
 	t_options		*options;
-	int				count;
+	int				finish;
 }					t_philosophers;
 
 int				ft_atou(char *s);
@@ -49,4 +52,6 @@ pthread_mutex_t *forks);
 t_philosophers	**ft_clean(t_options *options, \
 t_philosophers **philosophers, pthread_mutex_t *forks, int parameter);
 int				ft_abs(int n);
+int				ft_isdigit(int c);
+size_t			ft_strlen(const char *s);
 #endif
